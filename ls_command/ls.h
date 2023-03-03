@@ -24,7 +24,7 @@ struct ls_file{
     char filename[length];   /*filename*/
     char pathname[length];   /*the actual pathname*/
     __off_t size;            /*the size of the file*/
-    struct timespec time;    /*the mtime of the file*/
+     time_t time;    /*the mtime of the file*/
 }ls[number];
 #define ls_define
 #endif
