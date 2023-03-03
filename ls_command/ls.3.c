@@ -44,6 +44,12 @@ void do_ls(char *dirname)
                 sprintf(ls[count++].filename,"%s",direntp->d_name);
                 ls_R(direntp->d_name,dirname);
             }
+            else
+            {
+                sprintf(ls[count].pathname,"%s/%s",dirname,direntp->d_name);
+                sprintf(ls[count++].filename,"%s",direntp->d_name);
+                ls_R(direntp->d_name,dirname);
+            }
         }
         closedir(dir_prt);
     } 
@@ -58,7 +64,7 @@ void ls_R(char *file,char *dir)
     else
     {
         ls[count].size=info.st_size;
-        ls[count].time=info.st_mtim;
+        ls[count].time=info.st_mtime;
 
         if((memchr(cnd,'R',7)!=NULL)&&S_ISDIR(info.st_mode))
         {
@@ -146,7 +152,7 @@ void show_file_info(char *filename,struct stat *info_p)
         printf(" %-8s ",uid_to_name(info_p->st_uid));
         printf(" %-8s ",gid_to_name(info_p->st_gid));
         printf(" %8ld ",(long)ls[count].size);
-        printf(" %.12s ",ctime((time_t *)&info_p->st_mtim));
+        printf(" %.12s ",ctime(&info_p->st_mtime));
     }
         printf("%s\n",filename);
 }
