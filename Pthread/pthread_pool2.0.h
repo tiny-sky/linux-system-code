@@ -28,7 +28,7 @@ typedef struct ThreadPool
     int maxnum;           // 最大的线程数
     int minnum;           // 最小的线程数
     int busynum;          // 正在忙的线程数
-    int livenum;          // 正在忙的线程数
+    int livenum;          // 幸存的线程数
     int exitnum;          // 要销毁的线程数
 
     // 互斥量与条件变量

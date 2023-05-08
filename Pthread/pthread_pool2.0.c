@@ -161,7 +161,7 @@ void *manager(void *arg)
     if (queuenum * 2 < livenum && livenum > pool->minnum)
     {
         pthread_mutex_lock(&pool->mutexpool);
-        pool->exitnum = livenum - queuenum * 2;
+        pool->exitnum = 2;
         pthread_mutex_unlock(&pool->mutexpool);
         // 让线程自杀
         for (int i = 0; i < pool->exitnum; i++)
