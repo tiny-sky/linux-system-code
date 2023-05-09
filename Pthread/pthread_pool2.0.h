@@ -42,9 +42,9 @@ typedef struct ThreadPool
 // 线程的初始化
 ThreadPool *threadPoolInit(int min, int max, int queueSize);
 // 销毁线程池
-
+int threadPoolDestroy (ThreadPool *Pool);
 // 给线程池添加任务
-
+void threadPoolAdd(ThreadPool *pool, void *(function)(void *), void *arg);
 // 工作线程
 void *worker(void *arg);
 // 管理者线程
