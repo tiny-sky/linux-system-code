@@ -225,7 +225,7 @@ int threadPoolDestroy(ThreadPool *pool)
     // 回收管理者线程
     pthread_join(pool->managerID, NULL);
     // 先唤醒任务线程，然后再回收
-    pthread_cond_broadcast(&pool->notEmpty);
+    pthread_cond_broadcast( &pool->notEmpty);
     for (int i = 0; i < pool->maxnum; i++)
     {
         if (pool->threadIDs[i] != 0)
