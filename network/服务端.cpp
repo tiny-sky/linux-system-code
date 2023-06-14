@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
-#define BUFLEN 128
+#define BUFLEN 1024
 #define QLEN 10
 
 using namespace std;
@@ -16,9 +16,10 @@ using namespace std;
 void serve(int sockfd)
 {
 
-    int Connerfd, status;
+    int Connerfd, status,number;
     FILE *fp;
     pid_t pid;
+    string buf(BUFLEN, '\0');
 
     for (;;)
     {
@@ -42,6 +43,13 @@ void serve(int sockfd)
              *通过创建的子进程来执行一个终端命令
              * 并通过重定向标准输入与输出来将数据传递到客户端
              */
+            if((number = recv(Connerfd,&buf[0],BUFLEN,0))<0){
+                cerr << "接受数据失败:" << strerror(errno) << endl;
+                exit(1);
+            }
+
+            cout << Connerfd << "号套接字发送数据请求：" << '\t' << &buf[0] << endl;
+
             if (dup2(Connerfd, STDERR_FILENO) < 0 ||
                 dup2(Connerfd, STDOUT_FILENO) < 0)
             {
@@ -50,7 +58,7 @@ void serve(int sockfd)
             }
 
             close(Connerfd);
-            execl("/usr/bin/uptime", "uptime", NULL);
+            execl("/usr/bin/ls", "ls","-l", NULL);
             std::cerr << "error:" << strerror(errno) << std::endl;
         }
         else
@@ -75,6 +83,7 @@ int initserver(int type, struct sockaddr *addr, socklen_t len, int qlen)
     // 将套接字与地址相关联
     if (bind(fd, addr, len) < 0)
     {
+        cout << "关联失败......" << endl;
         goto errout;
     }
     cout << "bind " << fd << "关联完成......" << endl;
@@ -82,16 +91,17 @@ int initserver(int type, struct sockaddr *addr, socklen_t len, int qlen)
     cout << "开始监听......" << endl;
     if (listen(fd, qlen) < 0)
     {
+        cout << "监听失败......" << endl;
         goto errout;
     }
+    cout << "监听成功......" << endl;
     return fd;
 
 // 错误处理
 errout:
-    cout << "监听失败......" << endl;
     err = errno;
     close(fd);
-    errno = err;
+    cerr << strerror(err) << endl;
     return -1;
 }
 
@@ -121,11 +131,12 @@ int main()
     cout << "主机名获取成功：" << host << endl;
     // 获取地址模板
     memset(&hint, 0, sizeof(hint));
+    hint.ai_family = AF_INET;
     hint.ai_flags = AI_CANONIDN;
     hint.ai_socktype = SOCK_STREAM;
     hint.ai_addr = NULL;
     hint.ai_next = NULL;
-    if ((err = getaddrinfo(host, "80", &hint, &ailist)) != 0)
+    if ((err = getaddrinfo(host, "9000", &hint, &ailist)) != 0)
     {
         std::cerr << "getaddrinfo error : " << strerror(err) << std::endl;
         exit(1);
