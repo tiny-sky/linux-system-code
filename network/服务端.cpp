@@ -16,22 +16,38 @@ using namespace std;
 void serve(int sockfd)
 {
 
-    int Connerfd, status,number;
+    int Connerfd, status, number;
     FILE *fp;
     pid_t pid;
     string buf(BUFLEN, '\0');
 
-    for (;;)
+    cout << "开始server工作"
+         << '\n'
+         << "******************************" << '\n'
+         << '\n'
+         << endl;
+    // 被动套接字接受连续，产生通信套接字
+    if ((Connerfd = accept(sockfd, NULL, NULL)) < 0)
     {
-        cout << "开始server工作" << endl;
-        // 被动套接字接受连续，产生通信套接字
-        if ((Connerfd = accept(sockfd, NULL, NULL)) < 0)
+        std::cerr << "error:" << strerror(errno) << std::endl;
+        exit(1);
+    }
+    cout << "通信套接字获取成功：" << Connerfd << endl;
+    // 生成子进程开始执行服务器工作
+
+    while (1)
+    {
+        if ((number = recv(Connerfd, &buf[0], BUFLEN, 0)) < 0)
         {
-            std::cerr << "error:" << strerror(errno) << std::endl;
+            cerr << "接受数据失败:" << strerror(errno) << endl;
             exit(1);
         }
-        cout << "通信套接字获取成功：" << Connerfd << endl;
-        // 生成子进程开始执行服务器工作
+        if(strncpy(&buf[0],"exit",4) == 0){
+            close(Connerfd);
+            exit(1);
+        }
+        cout << Connerfd << "号套接字发送数据请求：" << '\t' << &buf[0] << endl;
+
         if ((pid = fork()) < 0)
         {
             std::cerr << "error:" << strerror(errno) << std::endl;
@@ -43,12 +59,6 @@ void serve(int sockfd)
              *通过创建的子进程来执行一个终端命令
              * 并通过重定向标准输入与输出来将数据传递到客户端
              */
-            if((number = recv(Connerfd,&buf[0],BUFLEN,0))<0){
-                cerr << "接受数据失败:" << strerror(errno) << endl;
-                exit(1);
-            }
-
-            cout << Connerfd << "号套接字发送数据请求：" << '\t' << &buf[0] << endl;
 
             if (dup2(Connerfd, STDERR_FILENO) < 0 ||
                 dup2(Connerfd, STDOUT_FILENO) < 0)
@@ -58,12 +68,12 @@ void serve(int sockfd)
             }
 
             close(Connerfd);
-            execl("/usr/bin/ls", "ls","-l", NULL);
+            execl("/usr/bin/ls", "ls", "-l", NULL);
             std::cerr << "error:" << strerror(errno) << std::endl;
         }
         else
         { // 父进程
-            close(Connerfd);
+        
             waitpid(pid, &status, 0);
         }
     }
@@ -88,7 +98,6 @@ int initserver(int type, struct sockaddr *addr, socklen_t len, int qlen)
     }
     cout << "bind " << fd << "关联完成......" << endl;
     // 开始监听请求连接数据
-    cout << "开始监听......" << endl;
     if (listen(fd, qlen) < 0)
     {
         cout << "监听失败......" << endl;
