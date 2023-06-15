@@ -18,7 +18,7 @@ void print_uptime (int sockfd){
 
     //执行读取操作
     cout << "\n" << "*************************************************" << endl;
-    while((n = recv(sockfd,buf,BUFLEN,0 )) >0){
+    if((n = recv(sockfd,buf,BUFLEN,0)) >0){                                 //这样处理是有问题的，当读取的数据大于BUFLEN时，剩余的将不会读取
 
         cout << "\n" << "------------" << "当前读取数据字节为：" << n << "------------" << endl;
         write(STDOUT_FILENO, buf, n);
@@ -125,7 +125,10 @@ int main(){
                if(strncmp(&buf[0],"exit",4) ==0 ){
                    break;
                }    
-               send(sockfd, &buf[0], strlen(&buf[0]), 0);
+                if(send(sockfd, &buf[0], strlen(&buf[0]), 0)<0){
+                   cerr << "send error:" << strerror(errno) << endl;
+                   exit(1);
+                }
                print_uptime(sockfd);
            }
            close(sockfd);
