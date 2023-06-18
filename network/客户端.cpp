@@ -17,13 +17,16 @@ void print_uptime (int sockfd){
     char buf[BUFLEN];
 
     //执行读取操作
-    cout << "\n" << "*************************************************" << endl;
+
     if((n = recv(sockfd,buf,BUFLEN,0)) >0){                                 //这样处理是有问题的，当读取的数据大于BUFLEN时，剩余的将不会读取
 
-        cout << "\n" << "------------" << "当前读取数据字节为：" << n << "------------" << endl;
-        write(STDOUT_FILENO, buf, n);
+        cout << "(服务端)sockfd:" << sockfd << "发送数据：" << '\t' << flush;
+        if(write(STDOUT_FILENO, buf, n)<0){
+            cerr << strerror(errno) << endl;
+            exit(1);
+        }
     }
-    cout << "\n" << "*************************************************" << endl;
+  
     if(n < 0){
         cerr << "error:" << strerror(errno) << endl;
         exit(1);
@@ -38,11 +41,9 @@ int connect_retry (int domain,int type,int protocol,const struct sockaddr* addr,
         //生成套接字
       if( (fd = socket(domain,type,protocol)) <0)
            return -1;
-       cout << "socket " << fd << "初始化完成......" << endl;
 
        // 连接服务器
        if (connect(fd, addr, alen) == 0){
-           cout << "connect" << fd << "连接成功......" << endl;
            return fd;
        }
         close(fd);
@@ -85,7 +86,7 @@ int main(){
         cerr << "error:" << strerror(errno) << endl;
         exit(1);
     }
-    cout << "主机名获取成功：" << host << endl;
+
     //获取地址模板
     memset(&hint, 0, sizeof(hint));
     hint.ai_family = AF_INET;
@@ -109,18 +110,20 @@ int main(){
            cerr << "getnameinfo error:" << gai_strerror(err) << endl;
            exit(1);
         }
-        cout << "******************" << endl;
-        cout << "IP address :" << &ip_str[0] << endl;
-        cout << "Host :" << &host_str[0] << endl;
-        cout << "Service :" << &service_str[0] << endl;
-        cout << "******************" << endl;
+        cout << "************Host information*************" << endl;
+        cout << '\t'<<"IP address :" << ip_str<< endl;
+        cout <<'\t'<< "Host :" << host_str << endl;
+        cout <<'\t'<< "Service :" << service_str<< endl;
+        cout << "***************************************" << endl;
 
         //尝试多次连接 
         if((sockfd= connect_retry(aip->ai_family,SOCK_STREAM,0,aip->ai_addr,aip->ai_addrlen)) <0){
            cerr << "error:" << strerror(errno) << endl;
         }else{
-           cout << "当前连接成功sockfd:" << sockfd << endl;
+           cout << "当前连接成功sockfd:" << sockfd << '\n' << endl;
            while(1){
+
+               cout << "请向服务端" << sockfd << "发送数据："<<flush;
                fgets(&buf[0], BUFLEN, stdin);
                if(strncmp(&buf[0],"exit",4) ==0 ){
                    break;
