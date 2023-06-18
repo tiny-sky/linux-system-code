@@ -19,35 +19,36 @@ void serve(int sockfd)
     int Connerfd, status, number;
     FILE *fp;
     pid_t pid;
-    string buf(BUFLEN, '\0');
+    string Rebuf(BUFLEN, '\0');
+    string Wrbuf(BUFLEN, '\0');
 
     cout << "开始server工作"
          << '\n'
-         << "******************************" << '\n'
-         << '\n'
-         << endl;
+         << "******************************" << endl;
     // 被动套接字接受连续，产生通信套接字
     if ((Connerfd = accept(sockfd, NULL, NULL)) < 0)
     {
         std::cerr << "error:" << strerror(errno) << std::endl;
         exit(1);
     }
-    cout << "通信套接字获取成功：" << Connerfd << endl;
+    cout << "通信套接字获取成功：" << Connerfd << '\n'<<endl;
     // 生成子进程开始执行服务器工作
 
     while (1)
     {
-        if ((number = recv(Connerfd, &buf[0], BUFLEN, 0)) < 0)
+        if ((number = recv(Connerfd, &Rebuf[0], BUFLEN, 0)) < 0)
         {
             cerr << "接受数据失败:" << strerror(errno) << endl;
             exit(1);
         }
-        if(strncpy(&buf[0],"exit",4) == 0){
+        if(strncmp(&Rebuf[0],"exit",4) == 0){
             close(Connerfd);
             exit(1);
         }
-        cout << Connerfd << "号套接字发送数据请求：" << '\t' << &buf[0] << endl;
-
+        Rebuf[Rebuf.find('\n', 0)]='\0';
+        cout <<"(客户端)sockfd:"<<Connerfd << "发送数据: " << '\t' << Rebuf.c_str() << endl;
+        cout << "请回复客户端" << Connerfd << "的信息:" <<flush;
+        cout << "ahah" << endl;
         if ((pid = fork()) < 0)
         {
             std::cerr << "error:" << strerror(errno) << std::endl;
@@ -60,6 +61,7 @@ void serve(int sockfd)
              * 并通过重定向标准输入与输出来将数据传递到客户端
              */
 
+            // cout << "请回复客户端" << Connerfd << "的信息:";             为什么当cout放在这里的时候，数据会被发送到Connerfd当中？
             if (dup2(Connerfd, STDERR_FILENO) < 0 ||
                 dup2(Connerfd, STDOUT_FILENO) < 0)
             {
@@ -68,8 +70,13 @@ void serve(int sockfd)
             }
 
             close(Connerfd);
-            execl("/usr/bin/ls", "ls", "-l", NULL);
-            std::cerr << "error:" << strerror(errno) << std::endl;
+            //execl("/usr/bin/ls", "ls", "-l", NULL);
+            //std::cerr << "error:" << strerror(errno) << std::endl;
+
+            //cout << cin.rdbuf();          该函数一直堵塞在这里
+            
+            getline(cin, Wrbuf);
+            cout << Wrbuf << endl;
         }
         else
         { // 父进程
@@ -89,21 +96,21 @@ int initserver(int type, struct sockaddr *addr, socklen_t len, int qlen)
     {
         return -1;
     }
-    cout << "被动socket " << fd << "初始化完成......" << endl;
+ 
     // 将套接字与地址相关联
     if (bind(fd, addr, len) < 0)
     {
         cout << "关联失败......" << endl;
         goto errout;
     }
-    cout << "bind " << fd << "关联完成......" << endl;
+ 
     // 开始监听请求连接数据
     if (listen(fd, qlen) < 0)
     {
         cout << "监听失败......" << endl;
         goto errout;
     }
-    cout << "监听成功......" << endl;
+
     return fd;
 
 // 错误处理
